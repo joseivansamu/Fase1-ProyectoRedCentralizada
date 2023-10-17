@@ -1,10 +1,10 @@
 
-#Comandos usados para configurar el servidor Jaume I
+#Comandos usados para configurar el servidor Master
 
-#WIP
+#Los comandos son válidos para windows server GUI y CORE, sin embargo se marcará con un $ después de la almohadilla los comandos que solo se usan para el servidor CORE
 
 #Renombrar el nombre del dispositivo
-Rename-Computer -NewName "SRV-Jaume-I"
+Rename-Computer -NewName "Nombre"
 
 #Cambiar la hora por internet del servidor
 w32tm /config /syncfromflags:manual /manualpeerlist:es.ntp.pool.org /update
@@ -18,13 +18,13 @@ Start-service w32time
 #Conocer la ID del adaptador de red
 Get-netadapter
 
-#Cambiar la IP del adaptador de red. 5 significa la ID de la interfaz y 192.168.2.51 la ip asignada
-New-Netipaddress -InterfaceIndex 5 -IpAddress 192.168.2.51
+#Cambiar la IP del adaptador de red. 5 significa la ID de la interfaz y IP la ip a asignar
+New-Netipaddress -InterfaceIndex 5 -IpAddress IP
 
 #Cambiar la máscara de la interfaz. 5 significa la ID de la interfaz y 24 la cantidad de bits que tendrá la máscara
 Set-NetIPAddress -InterfaceIndex 5 -PrefixLength 24
 
-#Añadir una puerta de enlace en una interfaz
+#Añadir una puerta de enlace en una interfaz. X significa la dirección donde mandará la información para que llegue al destino
 New-NetRoute -ifIndex 5 -DestinationPrefix 0.0.0.0/0 -NextHop X
 
 #Añadir un servidor DNS a una interfaz
@@ -36,3 +36,9 @@ netsh advfirewall firewall add rule name="Permitir pings" protocol=icmpv4:8,any 
 #Deshabilitar IPv6
 Get-NetAdapterBinding -ComponentID ‘ms_tcpip6’ | Disable-NetAdapterBinding -ComponentID ‘ms_tcpip6’ -PassThru
 
+#$ Implementar módulos necesarios para promocionar a réplica del master
+Import-module ServerManager
+Import-module ADDSDeployment
+
+#$ Implementar réplica de un dominio
+Install-ADDSDomainController -DomainName "edu-gva.mylocal" -Credential (Get-Credential) -SiteName "Default-First-Site-Name" -InstallDNS:$True -NoglobalCatalog:$False -CreateDNSDelegation:$False -ReplicationSourceDC "SRV-Master-EDU.edu-gva.mylocal" CriticalReplicationOnly:$False -DatabasePath "C:\Windows\NTDS" -LogPath "C:\Windows\NTDS" -NoRebootOnCompletion:$False -SysvolPath "C:\Windows\SYSVOL" -Force:$True
